@@ -47,8 +47,8 @@ namespace libgameinput
 			Seconds LastChangeTime = {};
 		};
 
-		std::array<KeyState, (size_t)KeyboardKey::Max> CurrentState;
-		std::array<KeyState, (size_t)KeyboardKey::Max> LastFrameState;
+		std::array<KeyState, 0xFF> CurrentState;
+		std::array<KeyState, 0xFF> LastFrameState;
 
 		// Inherited via IKeyboardDevice
 		virtual enum_flags<InputDeviceFlags> Flags() const override;

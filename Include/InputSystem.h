@@ -84,7 +84,7 @@ namespace libgameinput
 #endif
 		};
 
-		void MapKey(KeyboardKey key, Input to_input) { MapButton((DeviceInputID)key, KeyboardDeviceID, to_input); }
+		void MapKey(KeyboardButton key, Input to_input) { MapButton((DeviceInputID)key, KeyboardDeviceID, to_input); }
 		void MapMouse(MouseButton mouse_button, Input to_input) { MapButton((DeviceInputID)mouse_button, MouseDeviceID, to_input); }
 		void MapGamepad(XboxGamepadButton pad_button, Input to_input) { MapButton((DeviceInputID)pad_button, FirstGamepadDeviceID, to_input); }
 		void MapNavigation(UINavigationInput ui_input, Input to_input);
@@ -108,7 +108,7 @@ namespace libgameinput
 		
 		/// TODO: Screen buttons/joysticks
 		
-		void MapKeyAndButton(Input to_input, KeyboardKey key, XboxGamepadButton pad_button)
+		void MapKeyAndButton(Input to_input, KeyboardButton key, XboxGamepadButton pad_button)
 		{
 			MapKey(key, to_input);
 			MapGamepad(pad_button, to_input);
@@ -130,15 +130,15 @@ namespace libgameinput
 
 		bool IsButtonPressed(Input input_id);
 		bool IsButtonPressed(MouseButton but);
-		bool IsKeyPressed(KeyboardKey key);
+		bool IsKeyPressed(KeyboardButton key);
 
 		bool WasButtonPressed(Input input_id);
 		bool WasButtonPressed(MouseButton but);
-		bool WasKeyPressed(KeyboardKey key);
+		bool WasKeyPressed(KeyboardButton key);
 
 		bool WasButtonReleased(Input input_id);
 		bool WasButtonReleased(MouseButton but);
-		bool WasKeyReleased(KeyboardKey key);
+		bool WasKeyReleased(KeyboardButton key);
 
 		int  ButtonRepeatCount(Input input_id);
 

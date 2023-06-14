@@ -52,16 +52,16 @@ namespace libgameinput
 	{
 		switch (input)
 		{
-		case UINavigationInput::Accept: return IsInputPressed((DeviceInputID)KeyboardKey::Enter);
-		case UINavigationInput::Cancel: return IsInputPressed((DeviceInputID)KeyboardKey::Escape);
-		case UINavigationInput::Left: return IsInputPressed((DeviceInputID)KeyboardKey::Left);
-		case UINavigationInput::Right: return IsInputPressed((DeviceInputID)KeyboardKey::Right);
-		case UINavigationInput::Up: return IsInputPressed((DeviceInputID)KeyboardKey::Up);
-		case UINavigationInput::Down: return IsInputPressed((DeviceInputID)KeyboardKey::Down);
-		case UINavigationInput::Home: return IsInputPressed((DeviceInputID)KeyboardKey::Home);
-		case UINavigationInput::End: return IsInputPressed((DeviceInputID)KeyboardKey::End);
-		case UINavigationInput::PageUp: return IsInputPressed((DeviceInputID)KeyboardKey::PgUp);
-		case UINavigationInput::PageDown: return IsInputPressed((DeviceInputID)KeyboardKey::PgDn);
+		case UINavigationInput::Accept: return IsInputPressed((DeviceInputID)KeyboardButton::Enter);
+		case UINavigationInput::Cancel: return IsInputPressed((DeviceInputID)KeyboardButton::Escape);
+		case UINavigationInput::Left: return IsInputPressed((DeviceInputID)KeyboardButton::Left);
+		case UINavigationInput::Right: return IsInputPressed((DeviceInputID)KeyboardButton::Right);
+		case UINavigationInput::Up: return IsInputPressed((DeviceInputID)KeyboardButton::Up);
+		case UINavigationInput::Down: return IsInputPressed((DeviceInputID)KeyboardButton::Down);
+		case UINavigationInput::Home: return IsInputPressed((DeviceInputID)KeyboardButton::Home);
+		case UINavigationInput::End: return IsInputPressed((DeviceInputID)KeyboardButton::End);
+		case UINavigationInput::PageUp: return IsInputPressed((DeviceInputID)KeyboardButton::PageUp);
+		case UINavigationInput::PageDown: return IsInputPressed((DeviceInputID)KeyboardButton::PageDown);
 		case UINavigationInput::Back:
 		case UINavigationInput::Forward:
 		case UINavigationInput::Menu:
@@ -81,16 +81,16 @@ namespace libgameinput
 	{
 		switch (input)
 		{
-		case UINavigationInput::Accept: return WasInputPressedLastFrame((DeviceInputID)KeyboardKey::Enter);
-		case UINavigationInput::Cancel: return WasInputPressedLastFrame((DeviceInputID)KeyboardKey::Escape);
-		case UINavigationInput::Left: return WasInputPressedLastFrame((DeviceInputID)KeyboardKey::Left);
-		case UINavigationInput::Right: return WasInputPressedLastFrame((DeviceInputID)KeyboardKey::Right);
-		case UINavigationInput::Up: return WasInputPressedLastFrame((DeviceInputID)KeyboardKey::Up);
-		case UINavigationInput::Down: return WasInputPressedLastFrame((DeviceInputID)KeyboardKey::Down);
-		case UINavigationInput::Home: return WasInputPressedLastFrame((DeviceInputID)KeyboardKey::Home);
-		case UINavigationInput::End: return WasInputPressedLastFrame((DeviceInputID)KeyboardKey::End);
-		case UINavigationInput::PageUp: return WasInputPressedLastFrame((DeviceInputID)KeyboardKey::PgUp);
-		case UINavigationInput::PageDown: return WasInputPressedLastFrame((DeviceInputID)KeyboardKey::PgDn);
+		case UINavigationInput::Accept: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Enter);
+		case UINavigationInput::Cancel: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Escape);
+		case UINavigationInput::Left: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Left);
+		case UINavigationInput::Right: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Right);
+		case UINavigationInput::Up: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Up);
+		case UINavigationInput::Down: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Down);
+		case UINavigationInput::Home: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Home);
+		case UINavigationInput::End: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::End);
+		case UINavigationInput::PageUp: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::PageUp);
+		case UINavigationInput::PageDown: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::PageDown);
 		case UINavigationInput::Back:
 		case UINavigationInput::Forward:
 		case UINavigationInput::Menu:
@@ -421,7 +421,7 @@ namespace libgameinput
 	}
 
 	std::map<DeviceInputID, IKeyboardDevice::KeyboardButtonDescriptor> IKeyboardDevice::mISOUSKeyboardButtons = [] {
-		using namespace KeyboardButton;
+		using enum KeyboardButton;
 		static constexpr auto valid_keys = { A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,  _1, _2, _3, _4, _5, _6, _7, _8, _9, _0,  Return, Escape, Backspace, Tab, Space,  
 			Minus, Equals, LeftBracket, RightBracket, Backslash, Semicolon, Apostrophe, Grave, Comma, Period, Slash,  Capslock,  F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,  
 			PrintScreen, ScrollLock, Pause, Insert, Home, PageUp, Delete, End, PageDown, Right, Left, Down, Up,  NumLock, KP_Divide, KP_Multiply, KP_Minus, KP_Plus, KP_Enter, 
@@ -437,7 +437,7 @@ namespace libgameinput
 
 		std::map<DeviceInputID, IKeyboardDevice::KeyboardButtonDescriptor> result;
 		for (auto key : valid_keys)
-			result[key] = {};
+			result[DeviceInputID(key)] = {};
 
 		result[4].Name = "A";
 		result[5].Name = "B";

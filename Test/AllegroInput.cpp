@@ -24,7 +24,7 @@ namespace libgameinput
 
 	DeviceInputID AllegroKeyboard::MaxInputID() const
 	{
-		return (int)KeyboardKey::Max;
+		return (int)KeyboardButton::Max;
 	}
 
 	double AllegroKeyboard::InputValue(DeviceInputID input) const
@@ -59,14 +59,14 @@ namespace libgameinput
 	{
 		if (!IsInputValid(input))
 			ReportInvalidInput(input);
-		return ButtonInputProperties{ magic_enum::enum_name((KeyboardKey)input) };
+		return ButtonInputProperties{ magic_enum::enum_name((KeyboardButton)input) };
 	}
 
 	void AllegroKeyboard::ForceRefresh()
 	{
 		ALLEGRO_KEYBOARD_STATE state;
 		al_get_keyboard_state(&state);
-		for (int i = 0; i < (int)KeyboardKey::Max; i++)
+		for (int i = 0; i < (int)KeyboardButton::Max; i++)
 		{
 			CurrentState[i].Down = al_key_down(&state, i);
 		}

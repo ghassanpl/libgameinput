@@ -61,7 +61,7 @@ namespace libgameinput
 		return Mouse()->IsInputPressed((DeviceInputID)but);
 	}
 
-	bool IInputSystem::IsKeyPressed(KeyboardKey key)
+	bool IInputSystem::IsKeyPressed(KeyboardButton key)
 	{
 		return Keyboard()->IsInputPressed((DeviceInputID)key);
 	}
@@ -90,7 +90,7 @@ namespace libgameinput
 		return Mouse()->IsInputPressed((DeviceInputID)but) && !Mouse()->WasInputPressedLastFrame((DeviceInputID)but);
 	}
 
-	bool IInputSystem::WasKeyPressed(KeyboardKey key)
+	bool IInputSystem::WasKeyPressed(KeyboardButton key)
 	{
 		return Keyboard()->IsInputPressed((DeviceInputID)key) && !Keyboard()->WasInputPressedLastFrame((DeviceInputID)key);
 	}
@@ -114,7 +114,7 @@ namespace libgameinput
 		return false;
 	}
 
-	bool IInputSystem::WasKeyReleased(KeyboardKey key)
+	bool IInputSystem::WasKeyReleased(KeyboardButton key)
 	{
 		return !Keyboard()->IsInputPressed((DeviceInputID)key) && Keyboard()->WasInputPressedLastFrame((DeviceInputID)key);
 	}
