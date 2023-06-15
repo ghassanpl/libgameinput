@@ -640,4 +640,13 @@ namespace libgameinput
 
 		return result;
 	}();
+
+	vec3 IEyeTrackingDevice::EyeFocusPosition() const
+	{
+		const auto left = LeftEye();
+		const auto right = RightEye();
+		if (left && right)
+			return ClosestPointBetween(left->Ray(), right->Ray());
+		return { NAN, NAN, NAN };
+	}
 }

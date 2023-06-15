@@ -39,7 +39,7 @@ namespace libgameinput
 		/// - Proximity
 		/// - Touchpad
 		/// - GPS
-		/// - Steps
+		/// - Step tracker
 		/// - Altitude
 		/// - Hand control (like for VR) - GetRotation() -> glm::quat; GetFingerAxes(FingerIndex)->pair<DID>; GetSqueezeAxis()->DID;
 		/// 
