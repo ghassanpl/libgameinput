@@ -84,9 +84,9 @@ namespace libgameinput
 #endif
 		};
 
-		void MapKey(KeyboardButton key, Input to_input) { MapButton((DeviceInputID)key, KeyboardDeviceID, to_input); }
-		void MapMouse(MouseButton mouse_button, Input to_input) { MapButton((DeviceInputID)mouse_button, MouseDeviceID, to_input); }
-		void MapGamepad(XboxGamepadButton pad_button, Input to_input) { MapButton((DeviceInputID)pad_button, FirstGamepadDeviceID, to_input); }
+		void MapKey(KeyboardButton key, Input to_input) { MapButton((size_t)key, KeyboardDeviceID, to_input); }
+		void MapMouse(MouseButton mouse_button, Input to_input) { MapButton((size_t)mouse_button, MouseDeviceID, to_input); }
+		void MapGamepad(XboxGamepadButton pad_button, Input to_input) { MapButton((size_t)pad_button, FirstGamepadDeviceID, to_input); }
 		void MapNavigation(UINavigationInput ui_input, Input to_input);
 		
 		/// TODO: void BindButtonPressed(Input button, func callback); /// maybe Bind* functions should return RegisteredCallbackID ?
@@ -114,10 +114,11 @@ namespace libgameinput
 			MapGamepad(pad_button, to_input);
 		}
 
-		void MapButton(DeviceInputID physical_button, InputDeviceIndex of_device, Input to_input);
-		void MapAxis1D(DeviceInputID physical_axis, InputDeviceIndex of_device, Input to_input);
-		void MapAxis2D(DeviceInputID physical_axis1, DeviceInputID physical_axis2, InputDeviceIndex of_device, Input to_input);
+		void MapButton(size_t physical_button, InputDeviceIndex of_device, Input to_input);
+		void MapAxis1D(size_t physical_axis, InputDeviceIndex of_device, Input to_input);
+		void MapAxis2D(size_t physical_axis1, size_t physical_axis2, InputDeviceIndex of_device, Input to_input);
 
+		/// TODO: Named mappings and layers, like in steam controller API
 		void ClearAllMappings();
 		json SerializeMappings();
 		void LoadMappings(json const& from);
@@ -125,7 +126,7 @@ namespace libgameinput
 		/// Data events: voice command, hand/body shape/gesture; maybe should be called "Match" or "Pattern" events?
 		//void MapDataEvent(...);
 
-		void MapButtonToAxis(DeviceInputID physical_button, InputDeviceIndex of_device, double to_pressed_value, double and_released_value, Input of_input);
+		void MapButtonToAxis(size_t physical_button, InputDeviceIndex of_device, double to_pressed_value, double and_released_value, Input of_input);
 		/// mapPhysicalButton:ofDevice:toPressedValue:andReleasedValue:ofAxisInput:
 
 		bool IsButtonPressed(Input input_id);
@@ -167,6 +168,8 @@ namespace libgameinput
 		std::string ButtonNamesForInput(Input input, std::string_view button_format);
 		std::string ButtonNameForInput(Input input, std::string_view button_format);
 
+		std::string CurrentGlyphForInput(Input input) const;
+
 		std::string ButtonNamesForInput(Input input)
 		{
 			return ButtonNamesForInput(input, "{}");
@@ -178,13 +181,13 @@ namespace libgameinput
 		}
 
 		/// TODO: Input recording
-		void StartRecordingDeviceInput(int dev, DeviceInputID);
+		void StartRecordingDeviceInput(int dev, size_t);
 		void StartRecordingDevice(int dev);
 		void StartRecordingAllDevices();
 
-		void SetMaxRecordedInputs(int dev, DeviceInputID did, int max = -1);
+		void SetMaxRecordedInputs(int dev, size_t did, int max = -1);
 
-		void StopRecordingDeviceInput(int dev, DeviceInputID);
+		void StopRecordingDeviceInput(int dev, size_t);
 		void StopRecording(int dev);
 		void StopAllRecording();
 
@@ -193,7 +196,7 @@ namespace libgameinput
 		struct Mapping
 		{
 			InputDeviceIndex DeviceID = 0;
-			DeviceInputID Inputs[2] = { 0, InvalidDeviceInputID };
+			size_t Inputs[2] = { 0, InvalidIndex };
 		};
 
 		IInputDevice* mLastActiveDevice = nullptr;
@@ -223,18 +226,18 @@ namespace libgameinput
 			Repeated,
 		};
 
-		struct InputChange
+		struct DeviceInputChange
 		{
 			TimePoint Timestamp{};
 			glm::vec3 Value{};
 			enum_flags<InputChangeFlags> Flags{};
 			InputDeviceIndex FromDevice{};
-			DeviceInputID FromInput{};
+			size_t FromInput{};
 		};
 		struct InputChangeEvent
 		{
 			Input TheInput{};
-			InputChange Change{};
+			DeviceInputChange Change{};
 		};
 	};
 

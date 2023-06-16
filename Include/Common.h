@@ -31,17 +31,7 @@ namespace libgameinput
 	using InputID = std::string;
 	inline static const InputID InvalidInput = {};
 
-	using DeviceComponentID = uintptr_t;
-	static constexpr inline DeviceComponentID InvalidDeviceComponentID = std::numeric_limits<DeviceComponentID>::max();
-	
-	using DeviceInputID = DeviceComponentID;
-	static constexpr inline DeviceInputID InvalidDeviceInputID = std::numeric_limits<DeviceInputID>::max();
-
-	using DeviceOutputID = DeviceComponentID;
-	static constexpr inline DeviceOutputID InvalidDeviceOutputID = std::numeric_limits<DeviceOutputID>::max();
-
-	using SubDeviceID = uintptr_t;
-	static constexpr inline SubDeviceID InvalidSubDeviceID = std::numeric_limits<SubDeviceID>::max();
+	inline static constexpr size_t InvalidIndex = std::numeric_limits<size_t>::max();
 
 	struct IInputSystem;
 

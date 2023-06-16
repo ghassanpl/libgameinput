@@ -30,18 +30,15 @@ namespace libgameinput
 		CanBeReset,
 		CanBeDisabled,
 		UniquePerSystem, /// Only one can be available in the system
-		InputsSequential,
-		OutputsSequential,
 	};
 
 	struct InputDeviceComponentProperties
 	{
-		DeviceComponentID ID = InvalidDeviceComponentID;
-
 		std::string Name;
 		std::string ShortName;
 
-		std::string GlyphURI;
+		/// TODO: Maybe we should just have a function that fills bitmap data?
+		std::string GlyphURIs; /// newline separated
 
 		Seconds UpdateFrequency = std::numeric_limits<Seconds>::min();
 
@@ -49,6 +46,7 @@ namespace libgameinput
 		vec3 PositionOnDevicePreview = {}; /// On image or model
 
 		std::vector<uint16_t> HIDID{};
+		uintptr_t InternalID = {};
 	};
 
 	struct InputProperties : InputDeviceComponentProperties
@@ -87,7 +85,7 @@ namespace libgameinput
 			Flags.set(InputFlags::ReturnsToNeutral); /// Most buttons return to neutral
 			DeadZoneMin = DeadZoneMax = MinValue = 0;
 			StepSize = 1;
-			GlyphURI = std::move(glyph_url);
+			GlyphURIs = std::move(glyph_url);
 		}
 	};
 
@@ -170,8 +168,6 @@ namespace libgameinput
 	{
 		Left,
 		Right,
-		Both,
-		Either,
 	};
 
 	enum class InputDeviceStatus
@@ -201,10 +197,10 @@ namespace libgameinput
 		virtual enum_flags<InputDeviceFlags> Flags() const = 0;
 
 		virtual auto ValidInputs() const -> std::span<InputProperties const> = 0;
+		        auto InputPropertiesOf(size_t index) -> InputProperties const*;
 		virtual bool IsAnyInputActive() const = 0;
-		virtual bool IsInputValid(DeviceInputID input) const = 0;
-		virtual double InputValue(DeviceInputID input) const = 0;
-		virtual double InputQuality(DeviceInputID input) const { return 1.0; } /// 0-1
+		virtual double InputValue(size_t input) const = 0;
+		virtual double InputQuality(size_t input) const { return 1.0; } /// 0-1
 
 		template <typename... T>
 		std::enable_if_t<(sizeof...(T) > 2 && sizeof...(T) <= 4), glm::vec<sizeof...(T), double>>
@@ -220,11 +216,11 @@ namespace libgameinput
 			return this->InputValueFrom(std::forward<RANGE>(range), std::make_index_sequence<size>{});
 		}
 
-		virtual bool IsInputPressed(DeviceInputID input) const = 0; /// TODO: { return InputValue(input) >= PropertiesOf(input).PressedThreshold; }
-		virtual double InputValueLastFrame(DeviceInputID input) const = 0;
-		virtual bool WasInputPressedLastFrame(DeviceInputID input) const = 0; /// TODO: { return InputValueLastFrame(input) >= PropertiesOf(input).PressedThreshold; }
+		virtual bool IsInputPressed(size_t input) const { return InputValue(input) >= ValidInputs()[input].PressedThreshold; }
+		virtual double InputValueLastFrame(size_t input) const = 0;
+		virtual bool WasInputPressedLastFrame(size_t input) const { return InputValueLastFrame(input) >= ValidInputs()[input].PressedThreshold; }
 		virtual bool SetInputUpdateFrequency(Seconds freq) { return false; }
-		virtual void ResetInput(DeviceInputID input) {} /// used, for example, to set a delta-based input to an origin value
+		virtual void ResetInput(size_t input) {} /// used, for example, to set a delta-based input to an origin value
 
 		/// TODO: Force feedback per input
 
@@ -233,17 +229,17 @@ namespace libgameinput
 		virtual bool WasNavigationPressedLastFrame(UINavigationInput input) const = 0;
 
 		virtual size_t SubDeviceCount() const { return 0; }
-		virtual IInputDevice* SubDevice(SubDeviceID index) const { return nullptr; }
+		virtual IInputDevice* SubDevice(size_t index) const { return nullptr; }
 		virtual IInputDevice* ParentDevice() const { return nullptr; }
 
 
 		virtual auto ValidOutputs() const->std::span<OutputProperties const> { return {}; }
-		virtual bool IsOutputValid(DeviceOutputID input) const { return false; }
-		virtual bool SetOutput(DeviceOutputID index, vec3 value) { return false; }
-		virtual bool ResetOutput(DeviceOutputID index) { return false; }
-		virtual bool SendOutputData(DeviceOutputID index, std::span<const uint8_t> data) { return false; }
-		virtual bool SetOutputCallback(DeviceOutputID index, std::function<void(std::span<uint8_t>)> callback) { return false; }
-		virtual bool EnableOutput(DeviceOutputID index, bool enable) { return false; }
+		        auto OutputPropertiesOf(size_t index) -> OutputProperties const*;
+		virtual bool SetOutput(size_t index, vec3 value) { return false; }
+		virtual bool ResetOutput(size_t index) { return false; }
+		virtual bool SendOutputData(size_t index, std::span<const uint8_t> data) { return false; }
+		virtual bool SetOutputCallback(size_t index, std::function<void(std::span<uint8_t>)> callback) { return false; }
+		virtual bool EnableOutput(size_t index, bool enable) { return false; }
 
 		/// TODO: Data
 		// virtual size_t DataCount() const = 0;
@@ -291,8 +287,8 @@ namespace libgameinput
 		virtual bool IsStringPropertyValid(StringProperty property) const = 0;
 		virtual std::string_view StringPropertyValue(StringProperty property, std::string_view lang = {}) const = 0;
 
-		/// TODO: Get Current Handedness
-		/// TODO: Get Available Handednesses
+		/// TODO: GetCurrentHandedness() -> BodySide;
+		/// TODO: GetAvailableHandednesses() -> enum_flags<BodySide>;
 
 		enum class NumberProperty
 		{
@@ -340,7 +336,7 @@ namespace libgameinput
 
 	protected:
 
-		void ReportInvalidInput(DeviceInputID input) const;
+		void ReportInvalidInput(size_t input) const;
 
 		template <typename RANGE, size_t I, size_t... INDICES>
 		auto InputValueFrom(RANGE&& range, std::index_sequence<I, INDICES...>) const -> glm::vec<sizeof...(INDICES) + 1, double>
@@ -406,7 +402,7 @@ namespace libgameinput
 			std::string URI{};
 		};
 
-		static std::map<DeviceInputID, KeyboardButtonDescriptor> mISOUSKeyboardButtons;
+		static std::map<size_t, KeyboardButtonDescriptor> mISOUSKeyboardButtons;
 	};
 
 	enum class MouseButton
@@ -450,13 +446,13 @@ namespace libgameinput
 	{
 		using IInputDevice::IInputDevice;
 		
-		virtual DeviceInputID VerticalWheelInputID() const = 0;
-		virtual DeviceInputID HorizontalWheelInputID() const = 0;
+		virtual size_t VerticalWheelInputID() const = 0;
+		virtual size_t HorizontalWheelInputID() const = 0;
 
-		virtual DeviceInputID XAxisInputID() const = 0;
-		virtual DeviceInputID YAxisInputID() const = 0;
+		virtual size_t XAxisInputID() const = 0;
+		virtual size_t YAxisInputID() const = 0;
 
-		virtual bool Button(MouseButton b) const { return this->IsInputPressed(DeviceInputID(b)); }
+		virtual bool Button(MouseButton b) const { return this->IsInputPressed(size_t(b)); }
 		virtual vec2 Position() const { return { this->InputValue(XAxisInputID()), this->InputValue(YAxisInputID()) }; }
 		virtual double Wheel() const { return this->InputValue(VerticalWheelInputID()); }
 
@@ -517,8 +513,8 @@ namespace libgameinput
 
 	protected:
 
-		virtual auto StickAxisInputs(uint8_t stick_num) -> std::array<DeviceInputID, 3> { return {InvalidDeviceInputID,InvalidDeviceInputID,InvalidDeviceInputID}; } 
-		virtual auto InputForButton(uint8_t button_num) -> DeviceInputID { return InvalidDeviceInputID; }
+		virtual auto StickAxisInputs(uint8_t stick_num) -> std::array<size_t, 3> { return {InvalidIndex,InvalidIndex,InvalidIndex}; } 
+		virtual auto InputForButton(uint8_t button_num) -> size_t { return InvalidIndex; }
 	};
 
 	enum class XboxGamepadButton
@@ -579,8 +575,8 @@ namespace libgameinput
 	struct IVirtualSpaceDevice : public virtual IInputDevice
 	{
 
-		virtual auto PositionInputs() const -> std::array<DeviceInputID, 3> = 0;
-		virtual auto RotationInputs() const -> std::array<DeviceInputID, 4> = 0;
+		virtual auto PositionInputs() const -> std::array<size_t, 3> = 0;
+		virtual auto RotationInputs() const -> std::array<size_t, 4> = 0;
 
 		virtual bool TracksPosition() const { return false; }
 		virtual bool TracksRotation() const { return false; }
@@ -619,16 +615,16 @@ namespace libgameinput
 			Ring,
 			Pinky,
 		};
-		virtual auto FingerAxisInputs() const -> std::array<DeviceInputID, 5> = 0;
-		virtual auto SqueezeInput() const -> DeviceInputID = 0;
+		virtual auto FingerAxisInputs() const -> std::array<size_t, 5> = 0;
+		virtual auto SqueezeInput() const -> size_t = 0;
 	};
 
 	struct IRoomScaleVRDevice : public virtual IInputDevice
 	{
-		virtual auto HeadTracker() -> SubDeviceID = 0;
-		virtual auto BodyTracker() -> SubDeviceID = 0;
-		virtual auto HandTrackers() -> std::array<SubDeviceID, 2> = 0;
-		virtual auto EnvironExtentsInputs() -> std::array<DeviceInputID, 3> = 0;
+		virtual auto HeadTracker() -> size_t = 0;
+		virtual auto BodyTracker() -> size_t = 0;
+		virtual auto HandTrackers() -> std::array<size_t, 2> = 0;
+		virtual auto EnvironExtentsInputs() -> std::array<size_t, 3> = 0;
 
 		/// proximity_to_extents: 0 - far away, 1 - at extents
 		virtual auto EnvironSafetyFunction(double proximity_to_extents) -> double { return pow(1.0 - proximity_to_extents, 4); }

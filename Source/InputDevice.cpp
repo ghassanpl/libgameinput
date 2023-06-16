@@ -12,10 +12,10 @@ namespace libgameinput
 
 	std::string_view IInputDevice::Name() const { return StringPropertyValue(StringProperty::Name); }
 
-	OutputProperties IInputDevice::OutputProperties(DeviceOutputID input) const
+	auto IInputDevice::InputPropertiesOf(size_t index) -> InputProperties const*
 	{
-		ParentSystem.ErrorReporter->NewError("Input device has no output properties").Value("Device", Name()).Perform();
-		std::terminate();
+		const auto props = ValidInputs();
+		return index < props.size() ? &props[index] : nullptr;
 	}
 
 	bool IKeyboardDevice::CanTriggerNavigation(UINavigationInput input) const
@@ -52,16 +52,16 @@ namespace libgameinput
 	{
 		switch (input)
 		{
-		case UINavigationInput::Accept: return IsInputPressed((DeviceInputID)KeyboardButton::Enter);
-		case UINavigationInput::Cancel: return IsInputPressed((DeviceInputID)KeyboardButton::Escape);
-		case UINavigationInput::Left: return IsInputPressed((DeviceInputID)KeyboardButton::Left);
-		case UINavigationInput::Right: return IsInputPressed((DeviceInputID)KeyboardButton::Right);
-		case UINavigationInput::Up: return IsInputPressed((DeviceInputID)KeyboardButton::Up);
-		case UINavigationInput::Down: return IsInputPressed((DeviceInputID)KeyboardButton::Down);
-		case UINavigationInput::Home: return IsInputPressed((DeviceInputID)KeyboardButton::Home);
-		case UINavigationInput::End: return IsInputPressed((DeviceInputID)KeyboardButton::End);
-		case UINavigationInput::PageUp: return IsInputPressed((DeviceInputID)KeyboardButton::PageUp);
-		case UINavigationInput::PageDown: return IsInputPressed((DeviceInputID)KeyboardButton::PageDown);
+		case UINavigationInput::Accept: return IsInputPressed((size_t)KeyboardButton::Enter);
+		case UINavigationInput::Cancel: return IsInputPressed((size_t)KeyboardButton::Escape);
+		case UINavigationInput::Left: return IsInputPressed((size_t)KeyboardButton::Left);
+		case UINavigationInput::Right: return IsInputPressed((size_t)KeyboardButton::Right);
+		case UINavigationInput::Up: return IsInputPressed((size_t)KeyboardButton::Up);
+		case UINavigationInput::Down: return IsInputPressed((size_t)KeyboardButton::Down);
+		case UINavigationInput::Home: return IsInputPressed((size_t)KeyboardButton::Home);
+		case UINavigationInput::End: return IsInputPressed((size_t)KeyboardButton::End);
+		case UINavigationInput::PageUp: return IsInputPressed((size_t)KeyboardButton::PageUp);
+		case UINavigationInput::PageDown: return IsInputPressed((size_t)KeyboardButton::PageDown);
 		case UINavigationInput::Back:
 		case UINavigationInput::Forward:
 		case UINavigationInput::Menu:
@@ -81,16 +81,16 @@ namespace libgameinput
 	{
 		switch (input)
 		{
-		case UINavigationInput::Accept: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Enter);
-		case UINavigationInput::Cancel: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Escape);
-		case UINavigationInput::Left: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Left);
-		case UINavigationInput::Right: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Right);
-		case UINavigationInput::Up: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Up);
-		case UINavigationInput::Down: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Down);
-		case UINavigationInput::Home: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::Home);
-		case UINavigationInput::End: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::End);
-		case UINavigationInput::PageUp: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::PageUp);
-		case UINavigationInput::PageDown: return WasInputPressedLastFrame((DeviceInputID)KeyboardButton::PageDown);
+		case UINavigationInput::Accept: return WasInputPressedLastFrame((size_t)KeyboardButton::Enter);
+		case UINavigationInput::Cancel: return WasInputPressedLastFrame((size_t)KeyboardButton::Escape);
+		case UINavigationInput::Left: return WasInputPressedLastFrame((size_t)KeyboardButton::Left);
+		case UINavigationInput::Right: return WasInputPressedLastFrame((size_t)KeyboardButton::Right);
+		case UINavigationInput::Up: return WasInputPressedLastFrame((size_t)KeyboardButton::Up);
+		case UINavigationInput::Down: return WasInputPressedLastFrame((size_t)KeyboardButton::Down);
+		case UINavigationInput::Home: return WasInputPressedLastFrame((size_t)KeyboardButton::Home);
+		case UINavigationInput::End: return WasInputPressedLastFrame((size_t)KeyboardButton::End);
+		case UINavigationInput::PageUp: return WasInputPressedLastFrame((size_t)KeyboardButton::PageUp);
+		case UINavigationInput::PageDown: return WasInputPressedLastFrame((size_t)KeyboardButton::PageDown);
 		case UINavigationInput::Back:
 		case UINavigationInput::Forward:
 		case UINavigationInput::Menu:
@@ -118,10 +118,10 @@ namespace libgameinput
 			return true;
 		case UINavigationInput::ScrollUp:
 		case UINavigationInput::ScrollDown:
-			return VerticalWheelInputID() != InvalidDeviceInputID;
+			return VerticalWheelInputID() != InvalidIndex;
 		case UINavigationInput::ScrollLeft:
 		case UINavigationInput::ScrollRight:
-			return HorizontalWheelInputID() != InvalidDeviceInputID;
+			return HorizontalWheelInputID() != InvalidIndex;
 
 		case UINavigationInput::Left:
 		case UINavigationInput::Right:
@@ -146,8 +146,8 @@ namespace libgameinput
 	{
 		switch (input)
 		{
-		case UINavigationInput::Accept: return IsInputPressed((DeviceInputID)MouseButton::Left);
-		case UINavigationInput::Cancel: return IsInputPressed((DeviceInputID)MouseButton::Right);
+		case UINavigationInput::Accept: return IsInputPressed((size_t)MouseButton::Left);
+		case UINavigationInput::Cancel: return IsInputPressed((size_t)MouseButton::Right);
 		case UINavigationInput::ScrollUp: return InputValue(VerticalWheelInputID()) < 0;
 		case UINavigationInput::ScrollDown: return InputValue(VerticalWheelInputID()) > 0;
 		case UINavigationInput::ScrollLeft: return InputValue(HorizontalWheelInputID()) < 0;
@@ -176,8 +176,8 @@ namespace libgameinput
 	{
 		switch (input)
 		{
-		case UINavigationInput::Accept: return WasInputPressedLastFrame((DeviceInputID)MouseButton::Left);
-		case UINavigationInput::Cancel: return WasInputPressedLastFrame((DeviceInputID)MouseButton::Right);
+		case UINavigationInput::Accept: return WasInputPressedLastFrame((size_t)MouseButton::Left);
+		case UINavigationInput::Cancel: return WasInputPressedLastFrame((size_t)MouseButton::Right);
 		case UINavigationInput::ScrollUp: return InputValueLastFrame(VerticalWheelInputID()) < 0;
 		case UINavigationInput::ScrollDown: return InputValueLastFrame(VerticalWheelInputID()) > 0;
 		case UINavigationInput::ScrollLeft: return InputValueLastFrame(HorizontalWheelInputID()) < 0;
@@ -226,7 +226,7 @@ namespace libgameinput
 		}
 	};
 
-	std::optional<InputProperties> IXboxGamepadDevice::PropertiesOf(DeviceInputID input) const
+	std::optional<InputProperties> IXboxGamepadDevice::PropertiesOf(size_t input) const
 	{
 		static const std::map<XboxGamepadButton, XboxButtonInputProperties> button_properties = {
 			{ XboxGamepadButton::A, XboxButtonInputProperties("A") },
@@ -322,16 +322,16 @@ namespace libgameinput
 	{
 		switch (input)
 		{
-		case UINavigationInput::Accept: return IsInputPressed((DeviceInputID)XboxGamepadButton::A);
-		case UINavigationInput::Cancel: return IsInputPressed((DeviceInputID)XboxGamepadButton::B);
-		case UINavigationInput::Menu: return IsInputPressed((DeviceInputID)XboxGamepadButton::Start);
-		case UINavigationInput::View: return IsInputPressed((DeviceInputID)XboxGamepadButton::Back);
-		case UINavigationInput::Left: return IsInputPressed((DeviceInputID)XboxGamepadButton::Left);
-		case UINavigationInput::Right: return IsInputPressed((DeviceInputID)XboxGamepadButton::Right);
-		case UINavigationInput::Up: return IsInputPressed((DeviceInputID)XboxGamepadButton::Up);
-		case UINavigationInput::Down: return IsInputPressed((DeviceInputID)XboxGamepadButton::Down);
-		case UINavigationInput::Back: return IsInputPressed((DeviceInputID)XboxGamepadButton::LeftBumper);
-		case UINavigationInput::Forward: return IsInputPressed((DeviceInputID)XboxGamepadButton::RightBumper);
+		case UINavigationInput::Accept: return IsInputPressed((size_t)XboxGamepadButton::A);
+		case UINavigationInput::Cancel: return IsInputPressed((size_t)XboxGamepadButton::B);
+		case UINavigationInput::Menu: return IsInputPressed((size_t)XboxGamepadButton::Start);
+		case UINavigationInput::View: return IsInputPressed((size_t)XboxGamepadButton::Back);
+		case UINavigationInput::Left: return IsInputPressed((size_t)XboxGamepadButton::Left);
+		case UINavigationInput::Right: return IsInputPressed((size_t)XboxGamepadButton::Right);
+		case UINavigationInput::Up: return IsInputPressed((size_t)XboxGamepadButton::Up);
+		case UINavigationInput::Down: return IsInputPressed((size_t)XboxGamepadButton::Down);
+		case UINavigationInput::Back: return IsInputPressed((size_t)XboxGamepadButton::LeftBumper);
+		case UINavigationInput::Forward: return IsInputPressed((size_t)XboxGamepadButton::RightBumper);
 		case UINavigationInput::PageUp: return StickAxisValue(0, 0) < -0.1;
 		case UINavigationInput::PageDown: return StickAxisValue(0, 0) > 0.1;
 		case UINavigationInput::PageLeft: return StickAxisValue(0, 1) < -0.1;
@@ -352,16 +352,16 @@ namespace libgameinput
 	{
 		switch (input)
 		{
-		case UINavigationInput::Accept: return WasInputPressedLastFrame((DeviceInputID)XboxGamepadButton::A);
-		case UINavigationInput::Cancel: return WasInputPressedLastFrame((DeviceInputID)XboxGamepadButton::B);
-		case UINavigationInput::Menu: return WasInputPressedLastFrame((DeviceInputID)XboxGamepadButton::Start);
-		case UINavigationInput::View: return WasInputPressedLastFrame((DeviceInputID)XboxGamepadButton::Back);
-		case UINavigationInput::Left: return WasInputPressedLastFrame((DeviceInputID)XboxGamepadButton::Left);
-		case UINavigationInput::Right: return WasInputPressedLastFrame((DeviceInputID)XboxGamepadButton::Right);
-		case UINavigationInput::Up: return WasInputPressedLastFrame((DeviceInputID)XboxGamepadButton::Up);
-		case UINavigationInput::Down: return WasInputPressedLastFrame((DeviceInputID)XboxGamepadButton::Down);
-		case UINavigationInput::Back: return WasInputPressedLastFrame((DeviceInputID)XboxGamepadButton::LeftBumper);
-		case UINavigationInput::Forward: return WasInputPressedLastFrame((DeviceInputID)XboxGamepadButton::RightBumper);
+		case UINavigationInput::Accept: return WasInputPressedLastFrame((size_t)XboxGamepadButton::A);
+		case UINavigationInput::Cancel: return WasInputPressedLastFrame((size_t)XboxGamepadButton::B);
+		case UINavigationInput::Menu: return WasInputPressedLastFrame((size_t)XboxGamepadButton::Start);
+		case UINavigationInput::View: return WasInputPressedLastFrame((size_t)XboxGamepadButton::Back);
+		case UINavigationInput::Left: return WasInputPressedLastFrame((size_t)XboxGamepadButton::Left);
+		case UINavigationInput::Right: return WasInputPressedLastFrame((size_t)XboxGamepadButton::Right);
+		case UINavigationInput::Up: return WasInputPressedLastFrame((size_t)XboxGamepadButton::Up);
+		case UINavigationInput::Down: return WasInputPressedLastFrame((size_t)XboxGamepadButton::Down);
+		case UINavigationInput::Back: return WasInputPressedLastFrame((size_t)XboxGamepadButton::LeftBumper);
+		case UINavigationInput::Forward: return WasInputPressedLastFrame((size_t)XboxGamepadButton::RightBumper);
 		case UINavigationInput::PageUp: return StickAxisValueLastFrame(0, 0) < -0.1;
 		case UINavigationInput::PageDown: return StickAxisValueLastFrame(0, 0) > 0.1;
 		case UINavigationInput::PageLeft: return StickAxisValueLastFrame(0, 1) < -0.1;
@@ -406,7 +406,7 @@ namespace libgameinput
 		return {};
 	}
 
-	void IInputDevice::ReportInvalidInput(DeviceInputID input) const
+	void IInputDevice::ReportInvalidInput(size_t input) const
 	{
 		ParentSystem.ErrorReporter->NewError("Input is not valid")
 			.Value("Input", input)
@@ -414,7 +414,7 @@ namespace libgameinput
 			.Perform();
 	}
 
-	std::map<DeviceInputID, IKeyboardDevice::KeyboardButtonDescriptor> IKeyboardDevice::mISOUSKeyboardButtons = [] {
+	std::map<size_t, IKeyboardDevice::KeyboardButtonDescriptor> IKeyboardDevice::mISOUSKeyboardButtons = [] {
 		using enum KeyboardButton;
 		static constexpr auto valid_keys = { A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,  _1, _2, _3, _4, _5, _6, _7, _8, _9, _0,  Return, Escape, Backspace, Tab, Space,  
 			Minus, Equals, LeftBracket, RightBracket, Backslash, Semicolon, Apostrophe, Grave, Comma, Period, Slash,  Capslock,  F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,  
@@ -429,9 +429,9 @@ namespace libgameinput
 			LeftCtrl, LeftShift, LeftAlt, LeftGUI, RightCtrl, RightShift, RightAlt, RightGUI
 		};
 
-		std::map<DeviceInputID, IKeyboardDevice::KeyboardButtonDescriptor> result;
+		std::map<size_t, IKeyboardDevice::KeyboardButtonDescriptor> result;
 		for (auto key : valid_keys)
-			result[DeviceInputID(key)] = {};
+			result[size_t(key)] = {};
 
 		result[4].Name = "A";
 		result[5].Name = "B";
@@ -642,5 +642,11 @@ namespace libgameinput
 		if (left && right)
 			return ClosestPointBetween(left->Ray(), right->Ray());
 		return { NAN, NAN, NAN };
+	}
+
+	auto IInputDevice::OutputPropertiesOf(size_t index) -> OutputProperties const*
+	{
+		const auto props = ValidOutputs();
+		return index < props.size() ? &props[index] : nullptr;
 	}
 }

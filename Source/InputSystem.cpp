@@ -30,11 +30,11 @@ namespace libgameinput
 	}
 
 
-	void IInputSystem::MapButton(DeviceInputID physical_button, InputDeviceIndex of_device, Input to_input)
+	void IInputSystem::MapButton(size_t physical_button, InputDeviceIndex of_device, Input to_input)
 	{
 		//if (of_device >= mInputDevices.size())
 			//Game->Warning("Input device index {} does not represent a connected device", of_device);
-		mPlayers[to_input.Player].Mappings[to_input.ActionID].push_back(Mapping{ of_device, {physical_button, InvalidDeviceInputID} });
+		mPlayers[to_input.Player].Mappings[to_input.ActionID].push_back(Mapping{ of_device, {physical_button, InvalidIndex} });
 	}
 
 	bool IInputSystem::IsButtonPressed(Input input_id)
@@ -58,12 +58,12 @@ namespace libgameinput
 
 	bool IInputSystem::IsButtonPressed(MouseButton but)
 	{
-		return Mouse()->IsInputPressed((DeviceInputID)but);
+		return Mouse()->IsInputPressed((size_t)but);
 	}
 
 	bool IInputSystem::IsKeyPressed(KeyboardButton key)
 	{
-		return Keyboard()->IsInputPressed((DeviceInputID)key);
+		return Keyboard()->IsInputPressed((size_t)key);
 	}
 
 	bool IInputSystem::WasButtonPressed(Input input_id)
@@ -87,12 +87,12 @@ namespace libgameinput
 
 	bool IInputSystem::WasButtonPressed(MouseButton but)
 	{
-		return Mouse()->IsInputPressed((DeviceInputID)but) && !Mouse()->WasInputPressedLastFrame((DeviceInputID)but);
+		return Mouse()->IsInputPressed((size_t)but) && !Mouse()->WasInputPressedLastFrame((size_t)but);
 	}
 
 	bool IInputSystem::WasKeyPressed(KeyboardButton key)
 	{
-		return Keyboard()->IsInputPressed((DeviceInputID)key) && !Keyboard()->WasInputPressedLastFrame((DeviceInputID)key);
+		return Keyboard()->IsInputPressed((size_t)key) && !Keyboard()->WasInputPressedLastFrame((size_t)key);
 	}
 
 	bool IInputSystem::WasButtonReleased(Input input_id)
@@ -116,7 +116,7 @@ namespace libgameinput
 
 	bool IInputSystem::WasKeyReleased(KeyboardButton key)
 	{
-		return !Keyboard()->IsInputPressed((DeviceInputID)key) && Keyboard()->WasInputPressedLastFrame((DeviceInputID)key);
+		return !Keyboard()->IsInputPressed((size_t)key) && Keyboard()->WasInputPressedLastFrame((size_t)key);
 	}
 
 	float IInputSystem::AxisValue(Input of_input)
@@ -204,7 +204,7 @@ namespace libgameinput
 		{
 			if (auto device = InputDevice(mapping.DeviceID))
 			{
-				if (auto props = device->PropertiesOf(mapping.Inputs[0]))
+				if (auto props = device->InputPropertiesOf(mapping.Inputs[0]))
 				{
 					if (!buttons.empty()) buttons += ", ";
 					buttons += std::vformat(button_format, std::make_format_args(props->Name));
@@ -238,7 +238,7 @@ namespace libgameinput
 
 		if (last_mapping)
 		{
-			if (auto props = last_device->PropertiesOf(last_mapping->Inputs[0]))
+			if (auto props = last_device->InputPropertiesOf(last_mapping->Inputs[0]))
 				return std::vformat(button_format, std::make_format_args(props->Name));
 		}
 
