@@ -31,9 +31,13 @@ namespace libgameinput
 	using InputID = std::string;
 	inline static const InputID InvalidInput = {};
 
-	using DeviceInputID = uintptr_t;
+	using DeviceComponentID = uintptr_t;
+	static constexpr inline DeviceComponentID InvalidDeviceComponentID = std::numeric_limits<DeviceComponentID>::max();
+	
+	using DeviceInputID = DeviceComponentID;
 	static constexpr inline DeviceInputID InvalidDeviceInputID = std::numeric_limits<DeviceInputID>::max();
-	using DeviceOutputID = uintptr_t;
+
+	using DeviceOutputID = DeviceComponentID;
 	static constexpr inline DeviceOutputID InvalidDeviceOutputID = std::numeric_limits<DeviceOutputID>::max();
 
 	using SubDeviceID = uintptr_t;
@@ -58,4 +62,12 @@ namespace libgameinput
 	};
 
 	vec3 ClosestPointBetween(ViewRay const& ray1, ViewRay const& ray2);
+
+	using uint128_t = std::array<uint64_t, 2>;
+	auto Vec3ToU128(vec3 const& v) -> uint128_t;
+	auto U128ToVec3(uint128_t v) -> vec3;
+	auto Vec2ToU64(vec2 const& v) -> uint64_t;
+	auto U64ToVec2(uint64_t v) -> vec3;
+	auto DoubleToU32(double v) -> uint32_t;
+	auto U32ToDouble(uint32_t v) -> double;
 }

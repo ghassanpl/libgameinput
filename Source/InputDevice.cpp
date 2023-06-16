@@ -202,11 +202,6 @@ namespace libgameinput
 		return false;
 	}
 
-	DeviceInputID IXboxGamepadDevice::MaxInputID() const
-	{
-		return 20;
-	}
-
 	struct XboxButtonInputProperties : InputProperties
 	{
 		XboxButtonInputProperties(std::string_view name)
@@ -416,7 +411,6 @@ namespace libgameinput
 		ParentSystem.ErrorReporter->NewError("Input is not valid")
 			.Value("Input", input)
 			.Value("Device", Name())
-			.Value("ValidRange", MaxInputID() - 1)
 			.Perform();
 	}
 

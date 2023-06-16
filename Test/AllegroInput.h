@@ -3,29 +3,28 @@
 #include "../Include/InputDevice.h"
 #include "../Include/InputSystem.h"
 #include <array>
+#include <allegro5/allegro5.h>
 
 struct ALLEGRO_JOYSTICK;
 union ALLEGRO_EVENT;
 
 namespace libgameinput
 {
-	struct AllegroInput : IInputSystem
+	struct AllegroInput : public IInputSystem
 	{
 		using IInputSystem::IInputSystem;
 
 		virtual void Init() override;
-
 		void ProcessEvent(ALLEGRO_EVENT const& event);
-
 		void RefreshJoysticks();
+		ALLEGRO_DISPLAY* ForDisplay() const;
 	};
 
 	struct AllegroKeyboard : IKeyboardDevice
 	{
 		using IKeyboardDevice::IKeyboardDevice;
 
-		virtual DeviceInputID MaxInputID() const override;
-		virtual bool IsReceivingAnyInput() const override;
+		virtual bool IsAnyInputActive() const override;
 		virtual double InputValue(DeviceInputID input) const override;
 		virtual bool IsInputPressed(DeviceInputID input) const override;
 		virtual double InputValueLastFrame(DeviceInputID input) const override;
@@ -34,7 +33,6 @@ namespace libgameinput
 		virtual void ForceRefresh() override;
 		virtual void NewFrame() override;
 		virtual std::string_view StringPropertyValue(StringProperty property, std::string_view lang = {}) const override;
-		virtual vec3 NumberPropertyValue(NumberProperty property) const override;
 
 		// Inherited via IKeyboardDevice
 		virtual void KeyPressed(DeviceInputID key);
@@ -50,18 +48,24 @@ namespace libgameinput
 		std::array<KeyState, 0xFF> CurrentState;
 		std::array<KeyState, 0xFF> LastFrameState;
 
+		bool mAnyInputActive = false;
+
 		// Inherited via IKeyboardDevice
 		virtual enum_flags<InputDeviceFlags> Flags() const override;
 		virtual bool IsStringPropertyValid(StringProperty property) const override;
-		virtual bool IsNumberPropertyValid(NumberProperty property) const override;
 	};
 
-	struct AllegroMouse : IMouseDevice
+	struct AllegroMouse : public IMouseDevice
 	{
-		using IMouseDevice::IMouseDevice;
+		AllegroMouse(AllegroInput& input);
 
-		virtual DeviceInputID MaxInputID() const override;
-		virtual bool IsReceivingAnyInput() const override;
+		virtual bool IsAnyInputActive() const override
+		{
+			for (auto& reg : ValidRegions())
+				if (reg.contains(Position()))
+					return true;
+			return false;
+		}
 		virtual double InputValue(DeviceInputID input) const override;
 		virtual bool IsInputPressed(DeviceInputID input) const override;
 		virtual double InputValueLastFrame(DeviceInputID input) const override;
@@ -102,19 +106,24 @@ namespace libgameinput
 		virtual void MouseEntered();
 		virtual void MouseLeft();
 
-		virtual auto ValidRegions() const -> std::vector<rec2> override;
-		virtual void SetValidRegions(std::span<rec2 const>) override;
+		virtual void SetValidRegionsFromDisplays() override
+		{
+			const auto display = static_cast<AllegroInput&>(this->ParentSystem).ForDisplay();
+			mValidRegions = { rec2::from_size({al_get_display_width(display), al_get_display_height(display)}) };
+		}
 
-		static constexpr uint64_t ButtonCount = 5;
+		static constexpr DeviceInputID ButtonCount = 5;
 
-		static constexpr uint64_t Wheel0 = ButtonCount + 0;
-		static constexpr uint64_t Wheel1 = ButtonCount + 1;
-		static constexpr uint64_t XAxis = ButtonCount + 2;
-		static constexpr uint64_t YAxis = ButtonCount + 3;
+		static constexpr DeviceInputID Wheel0 = ButtonCount + 0;
+		static constexpr DeviceInputID Wheel1 = ButtonCount + 1;
+		static constexpr DeviceInputID XAxis = ButtonCount + 2;
+		static constexpr DeviceInputID YAxis = ButtonCount + 3;
+		static constexpr DeviceInputID GlobalXAxis = ButtonCount + 4;
+		static constexpr DeviceInputID GlobalYAxis = ButtonCount + 5;
 
 	private:
 
-		static constexpr uint64_t TotalInputs = ButtonCount + 2 /* wheels */ + 2 /* axes */;
+		static constexpr uint64_t TotalInputs = ButtonCount + 2 /* wheels */ + 4 /* axes */;
 
 		std::array<double, TotalInputs> CurrentState{};
 		std::array<double, TotalInputs> LastFrameState{};
@@ -125,8 +134,7 @@ namespace libgameinput
 	{
 		AllegroGamepad(IInputSystem& sys, ALLEGRO_JOYSTICK* stick);
 
-		virtual DeviceInputID MaxInputID() const override;
-		virtual bool IsReceivingAnyInput() const override;
+		virtual bool IsAnyInputActive() const override;
 		virtual double InputValue(DeviceInputID input) const override;
 		virtual bool IsInputPressed(DeviceInputID input) const override;
 		virtual double InputValueLastFrame(DeviceInputID input) const override;

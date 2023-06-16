@@ -29,13 +29,15 @@ namespace libgameinput
 		Wireless,
 		CanBeReset,
 		CanBeDisabled,
-		UniquePerSystem, /// Only one available in the system
+		UniquePerSystem, /// Only one can be available in the system
 		InputsSequential,
 		OutputsSequential,
 	};
 
 	struct InputDeviceComponentProperties
 	{
+		DeviceComponentID ID = InvalidDeviceComponentID;
+
 		std::string Name;
 		std::string ShortName;
 
@@ -198,36 +200,33 @@ namespace libgameinput
 		virtual std::string_view Name() const;
 		virtual enum_flags<InputDeviceFlags> Flags() const = 0;
 
-		virtual DeviceInputID MaxInputID() const = 0;
+		virtual auto ValidInputs() const -> std::span<InputProperties const> = 0;
 		virtual bool IsAnyInputActive() const = 0;
-		virtual bool IsInputValid(DeviceInputID input) const { return input < MaxInputID(); }
+		virtual bool IsInputValid(DeviceInputID input) const = 0;
 		virtual double InputValue(DeviceInputID input) const = 0;
 		virtual double InputQuality(DeviceInputID input) const { return 1.0; } /// 0-1
 
 		template <typename... T>
 		std::enable_if_t<(sizeof...(T) > 2 && sizeof...(T) <= 4), glm::vec<sizeof...(T), double>>
-		InputValue(T&&... inputs) const {
+			InputValue(T&&... inputs) const {
 			return  { this->InputValue(inputs)... };
 		}
 
 		template <typename RANGE>
 		std::enable_if_t<((std::tuple_size_v<RANGE>) > 1 && (std::tuple_size_v<RANGE>) <= 4), glm::vec<std::tuple_size_v<RANGE>, double>>
-		InputValueFrom(RANGE&& range) const
+			InputValueFrom(RANGE&& range) const
 		{
 			constexpr auto size = std::tuple_size_v<RANGE>;
 			return this->InputValueFrom(std::forward<RANGE>(range), std::make_index_sequence<size>{});
 		}
-		
-		//virtual vec2 InputValue(DeviceInputID input1, DeviceInputID input2) const { return { this->InputValue(input1), this->InputValue(input2) }; }
-		virtual bool IsInputPressed(DeviceInputID input) const = 0;
+
+		virtual bool IsInputPressed(DeviceInputID input) const = 0; /// TODO: { return InputValue(input) >= PropertiesOf(input).PressedThreshold; }
 		virtual double InputValueLastFrame(DeviceInputID input) const = 0;
-		virtual bool WasInputPressedLastFrame(DeviceInputID input) const = 0;
+		virtual bool WasInputPressedLastFrame(DeviceInputID input) const = 0; /// TODO: { return InputValueLastFrame(input) >= PropertiesOf(input).PressedThreshold; }
 		virtual bool SetInputUpdateFrequency(Seconds freq) { return false; }
 		virtual void ResetInput(DeviceInputID input) {} /// used, for example, to set a delta-based input to an origin value
 
 		/// TODO: Force feedback per input
-
-		virtual auto PropertiesOf(DeviceInputID input) const -> std::optional<InputProperties> = 0;
 
 		virtual bool CanTriggerNavigation(UINavigationInput input) const = 0;
 		virtual bool IsNavigationPressed(UINavigationInput input) const = 0;
@@ -237,9 +236,9 @@ namespace libgameinput
 		virtual IInputDevice* SubDevice(SubDeviceID index) const { return nullptr; }
 		virtual IInputDevice* ParentDevice() const { return nullptr; }
 
-		virtual DeviceOutputID MaxOutputID() const { return {}; }
-		virtual bool IsOutputValid(DeviceOutputID input) const { return input < MaxOutputID(); }
-		virtual OutputProperties OutputProperties(DeviceOutputID input) const;
+
+		virtual auto ValidOutputs() const->std::span<OutputProperties const> { return {}; }
+		virtual bool IsOutputValid(DeviceOutputID input) const { return false; }
 		virtual bool SetOutput(DeviceOutputID index, vec3 value) { return false; }
 		virtual bool ResetOutput(DeviceOutputID index) { return false; }
 		virtual bool SendOutputData(DeviceOutputID index, std::span<const uint8_t> data) { return false; }
@@ -301,7 +300,15 @@ namespace libgameinput
 			AutoOffTimes, /// in seconds, X = before turning off, Y = before sleeping, Z = before entering low-power mode
 			OffsetToSensor, /// in cm, assuming sensor is at origin, this is sensor_pos - device_pos
 			Ranges, /// in cm, X = minimum, Y = optimum, Z = maximum; working distances between the device and the sensor
-			ChargingState, /// 0-1, X = current charge, Y = charging speed, in units per hour (<= 0 if not charging), Z = charge at which the device will notify of charging issue (if charging, at which point it will stop, if not charging, at which point it will request it)
+
+			/// ChargingState: 0-1, 
+			///		X = current charge, 
+			///		Y = charging or discharging speed, in units per hour
+			///			> 0 - charging
+			///			== 0 - not charging or discharging (e.g. on mains power)
+			///			< - discharging
+			///		Z = charge at which the device will notify of charging issue (if charging, at which point it will stop, if discharging, at which point it will request it)
+			ChargingState, 
 			PowerDraw, /// in amperes, X = current, Y = maximum, Z = minimum
 			InternalTemperature, /// float, in Celsius, X = current, Y = minimum safe, Z = maximum safe
 			ExternalTemperature, /// float, in Celsius, X = current, Y = minimum safe, Z = maximum safe
@@ -310,8 +317,8 @@ namespace libgameinput
 			SignalStrength, /// 0-1, X = current, Y = minimum
 		};
 
-		virtual bool IsNumberPropertyValid(NumberProperty property) const = 0;
-		virtual vec3 NumberPropertyValue(NumberProperty property) const = 0;
+		virtual bool IsNumberPropertyValid(NumberProperty property) const { return false; }
+		virtual vec3 NumberPropertyValue(NumberProperty property) const { return {NAN,NAN,NAN}; }
 
 		virtual void ForceRefresh() = 0;
 		virtual void NewFrame() = 0;
@@ -377,10 +384,10 @@ namespace libgameinput
 			KP_Colon = 203, KP_Hash = 204, KP_Space = 205, KP_At = 206, KP_Exclam = 207, KP_MemStore = 208, KP_MemRecall = 209, KP_MemClear = 210, KP_MemAdd = 211, 
 			KP_MemSubtract = 212, KP_MemMultiply = 213, KP_MemDivide = 214, KP_PlusMinus = 215, KP_Clear = 216, KP_ClearEntry = 217, KP_Binary = 218, KP_Octal = 219, 
 			KP_Decimal = 220, KP_Hexadecimal = 221,
-		LeftCtrl = 224, LeftShift = 225, LeftAlt = 226, LeftGUI = 227, RightCtrl = 228, RightShift = 229, RightAlt = 230, RightGUI = 231
+		LeftCtrl = 224, LeftShift = 225, LeftAlt = 226, LeftGUI = 227, RightCtrl = 228, RightShift = 229, RightAlt = 230, RightGUI = 231,
 	};
 
-	struct IKeyboardDevice : virtual IInputDevice
+	struct IKeyboardDevice : public virtual IInputDevice
 	{
 		using IInputDevice::IInputDevice;
 
@@ -439,10 +446,10 @@ namespace libgameinput
 		CannotDrop,
 	};
 
-	struct IMouseDevice : virtual IInputDevice
+	struct IMouseDevice : public virtual IInputDevice
 	{
 		using IInputDevice::IInputDevice;
-
+		
 		virtual DeviceInputID VerticalWheelInputID() const = 0;
 		virtual DeviceInputID HorizontalWheelInputID() const = 0;
 
@@ -464,8 +471,8 @@ namespace libgameinput
 		virtual bool CanWarp() const { return false; }
 		virtual void Warp(vec2 pos) {}
 
-		virtual auto ValidRegions() const -> std::vector<rec2> = 0;
-		virtual void SetValidRegions(std::span<rec2 const>) = 0;
+		virtual auto ValidRegions() const -> std::vector<rec2> { return mValidRegions; }
+		virtual void SetValidRegions(std::span<rec2 const> regs) { mValidRegions.assign(regs.begin(), regs.end()); }
 		virtual void SetValidRegions(rec2 const& rec) { this->SetValidRegions(std::span{ &rec, 1 }); }
 		virtual void SetValidRegionsFromDisplays() = 0;
 
@@ -474,9 +481,13 @@ namespace libgameinput
 		virtual bool CanTriggerNavigation(UINavigationInput input) const override;
 		virtual bool IsNavigationPressed(UINavigationInput input) const override;
 		virtual bool WasNavigationPressedLastFrame(UINavigationInput input) const override;
+
+	protected:
+
+		std::vector<rec2> mValidRegions;
 	};
 
-	struct IGamepadDevice : virtual IInputDevice
+	struct IGamepadDevice : public virtual IInputDevice
 	{
 		using IInputDevice::IInputDevice;
 
@@ -522,13 +533,9 @@ namespace libgameinput
 		Right, Left, Down, Up,
 	};
 
-	struct IXboxGamepadDevice : virtual IGamepadDevice
+	struct IXboxGamepadDevice : public virtual IGamepadDevice
 	{
 		using IGamepadDevice::IGamepadDevice;
-
-		virtual DeviceInputID MaxInputID() const override;
-
-		virtual auto PropertiesOf(DeviceInputID input) const ->std::optional<InputProperties> override;
 
 		virtual uint8_t StickCount() const override;
 		virtual uint8_t StickAxisCount(uint8_t stick_num) const override;
@@ -552,7 +559,7 @@ namespace libgameinput
 	};
 
 	/// TODO: api for this
-	struct ITextInputDevice : public IInputDevice
+	struct ITextInputDevice : public virtual IInputDevice
 	{
 		void StartTextInput(rec2 const& input_area);
 		void CancelTextInput();
@@ -569,7 +576,7 @@ namespace libgameinput
 		void OnTextCompositionCanceled();
 	};
 
-	struct IVirtualSpaceDevice : public IInputDevice
+	struct IVirtualSpaceDevice : public virtual IInputDevice
 	{
 
 		virtual auto PositionInputs() const -> std::array<DeviceInputID, 3> = 0;
@@ -591,7 +598,7 @@ namespace libgameinput
 		virtual std::string PositionUnits() const = 0;
 	};
 
-	struct IEyeTrackingDevice : public IInputDevice
+	struct IEyeTrackingDevice : public virtual IInputDevice
 	{
 		virtual size_t LeftEyeSubDeviceIndex() const = 0;
 		virtual size_t RightEyeSubDeviceIndex() const = 0;
@@ -602,7 +609,7 @@ namespace libgameinput
 		virtual vec3 EyeFocusPosition() const;
 	};
 
-	struct IHandTrackingDevice : public IVirtualSpaceDevice
+	struct IHandTrackingDevice : public virtual IVirtualSpaceDevice
 	{
 		enum class Finger
 		{
@@ -616,7 +623,7 @@ namespace libgameinput
 		virtual auto SqueezeInput() const -> DeviceInputID = 0;
 	};
 
-	struct IRoomScaleVRDevice : public IInputDevice
+	struct IRoomScaleVRDevice : public virtual IInputDevice
 	{
 		virtual auto HeadTracker() -> SubDeviceID = 0;
 		virtual auto BodyTracker() -> SubDeviceID = 0;
@@ -651,7 +658,7 @@ namespace libgameinput
 	};
 
 	/// Represents the entire machine and OS
-	struct ISystemDevice : public IInputDevice
+	struct ISystemDevice : public virtual IInputDevice
 	{
 		enum class ExampleInputs /// These can change during session
 		{

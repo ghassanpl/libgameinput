@@ -14,17 +14,12 @@ namespace libgameinput
 	{
 		if (property == StringProperty::Name)
 			return "Main Keyboard";
-		return "";
+		return {};
 	}
 
-	vec3 AllegroKeyboard::NumberPropertyValue(NumberProperty property) const
+	bool AllegroKeyboard::IsAnyInputActive() const
 	{
-		return vec3{};
-	}
-
-	DeviceInputID AllegroKeyboard::MaxInputID() const
-	{
-		return (int)KeyboardButton::Max;
+		return mAnyInputActive;
 	}
 
 	double AllegroKeyboard::InputValue(DeviceInputID input) const
@@ -58,7 +53,7 @@ namespace libgameinput
 	std::optional<InputProperties> AllegroKeyboard::PropertiesOf(DeviceInputID input) const
 	{
 		if (!IsInputValid(input))
-			ReportInvalidInput(input);
+			return {};
 		return ButtonInputProperties{ magic_enum::enum_name((KeyboardButton)input) };
 	}
 
@@ -66,16 +61,19 @@ namespace libgameinput
 	{
 		ALLEGRO_KEYBOARD_STATE state;
 		al_get_keyboard_state(&state);
-		for (int i = 0; i < (int)KeyboardButton::Max; i++)
+		bool any_down = false;
+		for (int i = 0; i < ALLEGRO_KEY_MAX; i++)
 		{
-			CurrentState[i].Down = al_key_down(&state, i);
+			const bool is_down = al_key_down(&state, i);
+			any_down |= is_down;
+			CurrentState[i].Down = is_down;
 		}
+		mAnyInputActive = any_down;
 	}
 
 	void AllegroKeyboard::NewFrame()
 	{
 		LastFrameState = CurrentState;
-		//ForceRefresh();
 	}
 
 	void AllegroKeyboard::KeyPressed(DeviceInputID key)
@@ -93,22 +91,24 @@ namespace libgameinput
 
 	enum_flags<InputDeviceFlags> AllegroKeyboard::Flags() const
 	{
-		return enum_flags<InputDeviceFlags>();
+		return enum_flags<InputDeviceFlags>{};
 	}
 
 	/// TODO: Leds
-
+		
 	bool AllegroKeyboard::IsStringPropertyValid(StringProperty property) const
 	{
 		return property == StringProperty::Name;
 	}
 
-	bool AllegroKeyboard::IsNumberPropertyValid(NumberProperty property) const
-	{
-		return false;
-	}
-
 	/// Mouse
+
+	AllegroMouse::AllegroMouse(AllegroInput& input)
+		: IInputDevice(input)
+	{
+		al_get_mouse_num_buttons();
+		al_get_mouse_num_axes();
+	}
 
 	std::string_view AllegroMouse::StringPropertyValue(IInputDevice::StringProperty property, std::string_view lang) const
 	{
@@ -209,6 +209,7 @@ namespace libgameinput
 
 	void AllegroMouse::ForceRefresh()
 	{
+		al_get_mouse_cursor_position();
 	}
 
 	void AllegroMouse::NewFrame()
@@ -297,7 +298,7 @@ namespace libgameinput
 
 	enum_flags<InputDeviceFlags> AllegroMouse::Flags() const
 	{
-		return enum_flags<InputDeviceFlags>();
+		return enum_flags<InputDeviceFlags>(InputsSequential);
 	}
 
 	bool AllegroMouse::IsStringPropertyValid(StringProperty property) const
@@ -523,22 +524,7 @@ namespace libgameinput
 
 	enum_flags<InputDeviceFlags> AllegroGamepad::Flags() const
 	{
-		return enum_flags<InputDeviceFlags>();
-	}
-
-	bool AllegroGamepad::IsStringPropertyValid(StringProperty property) const
-	{
-		return false;
-	}
-
-	bool AllegroGamepad::IsNumberPropertyValid(NumberProperty property) const
-	{
-		return false;
-	}
-
-	vec3 AllegroGamepad::NumberPropertyValue(NumberProperty property) const
-	{
-		return vec3();
+		return enum_flags<InputDeviceFlags>{InputsSequential};
 	}
 
 	void AllegroInput::Init()
